@@ -1,0 +1,145 @@
+javascript:(function() {
+  function accName(element) {
+    const isVisible = (element) => {
+      if (!element) return true;
+      return (getComputedStyle(element).visibility !== 'hidden' && getComputedStyle(element).display !== 'none' && !element.closest('[aria-hidden="true"]'))
+        ? isVisible(element.parentElement)
+        : false;
+    };
+
+    const getVisibleContent = (element) => {
+      return isVisible(element)
+        ? [[...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent.trim()).join(' '), [...element.children].map(getVisibleContent).filter(Boolean).join(' ')]
+            .join(' ')
+            .trim()
+        : '';
+    };
+
+    const getVisibleLabels = (selector) => [...element.ownerDocument.querySelectorAll(selector)]
+      .filter(label => label && isVisible(label))
+      .map(label => label.textContent.trim())
+      .join(', ');
+
+    const ariaLabels = getVisibleLabels(`#${element.getAttribute('aria-labelledby')?.split(' ').join(', #')}`);
+    const ariaLabel = element.getAttribute('aria-label')?.trim();
+    const labelForElement = getVisibleLabels(`label[for="${element.id}"]`);
+    const closestLabel = element.closest('label')?.textContent.trim();
+    const altText = element.hasAttribute('alt') ? element.getAttribute('alt')?.trim() : null;
+    const figcaption = element.closest('figure')?.querySelector('figcaption')?.textContent.trim();
+    const caption = element.closest('table')?.querySelector('caption')?.textContent.trim();
+    const legend = element.closest('fieldset')?.querySelector('legend')?.textContent.trim();
+    const title = element.getAttribute('title')?.trim();
+    const placeholder = element.getAttribute('placeholder')?.trim();
+    const textContent = getVisibleContent(element)?.trim();
+
+    return {
+      ariaLabels,
+      ariaLabel,
+      labelForElement,
+      closestLabel,
+      altText,
+      figcaption,
+      caption,
+      legend,
+      title,
+      placeholder,
+      textContent
+    };
+  }
+
+  // Fonction pour tronquer le texte à 120 caractères
+  function truncateText(text, maxLength = 120) {
+    return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+  }
+  
+  // Créer l'encadré (tooltip) draggable
+  const tooltip = document.createElement('div');
+  tooltip.style.position = 'fixed';
+  tooltip.style.top = '10px';
+  tooltip.style.left = '10px';
+  tooltip.style.width = '300px';
+  tooltip.style.backgroundColor = 'yellow';
+  tooltip.style.border = '1px solid black';
+  tooltip.style.padding = '10px';
+  tooltip.style.zIndex = '10000';
+  tooltip.style.cursor = 'move';
+  tooltip.style.userSelect = 'none'; // Désactiver la sélection de texte pendant le drag
+  document.body.appendChild(tooltip);
+  
+  // Ajouter le bouton de fermeture (croix)
+  const closeButton = document.createElement('span');
+  closeButton.innerHTML = '&times;';
+  closeButton.style.position = 'absolute';
+  closeButton.style.top = '5px';
+  closeButton.style.right = '10px';
+  closeButton.style.cursor = 'pointer';
+  closeButton.style.fontSize = '16px';
+  closeButton.style.fontWeight = 'bold';
+  closeButton.style.color = '#333';
+  tooltip.appendChild(closeButton);
+
+  // Fonction pour fermer le tooltip
+  closeButton.addEventListener('click', function() {
+    tooltip.style.display = 'none';
+  });
+
+  // Ajouter la fonctionnalité de déplacement (draggable)
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  tooltip.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    offsetX = e.clientX - tooltip.offsetLeft;
+    offsetY = e.clientY - tooltip.offsetTop;
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (isDragging) {
+      tooltip.style.left = (e.clientX - offsetX) + 'px';
+      tooltip.style.top = (e.clientY - offsetY) + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', function() {
+    isDragging = false;
+  });
+
+  // Ajouter un écouteur de survol de la souris
+  document.addEventListener('mouseover', function(event) {
+    const element = event.target;
+    
+    // Empêcher l'action si la souris est sur l'encadré (tooltip) ou un de ses descendants
+    if (tooltip.contains(element)) return;
+
+    // Ignorer les éléments de type spécifié dans ignoredTags
+    if (['div', 'html', 'body'].includes(element.tagName.toLowerCase())) return;
+
+    const name = accName(element);
+
+    // Récupérer le tagName, l'ID et la classe de l'élément
+    const tagName = element.tagName.toLowerCase();
+    const elementID = element.id ? `#${element.id}` : '';
+    const elementClass = element.className ? `.${[...element.classList].join('.')}` : '';
+
+    // Formater les résultats de manière lisible
+    tooltip.innerHTML = `
+      <strong>${tagName}${elementID}${elementClass}:</strong><br/>
+      <ul>
+        ${Object.keys(name).map(key => 
+          name[key] ? `<li><strong>${key}:</strong> ${truncateText(name[key])}</li>` : ''
+        ).join('')}
+      </ul>
+    `;
+    tooltip.appendChild(closeButton); // Ré-ajout de la croix après modification du contenu
+  });
+
+  // Cacher l'encadré lorsqu'aucun élément n'est survolé
+  document.addEventListener('mouseout', function() {
+    tooltip.innerHTML = '<strong>Survolez un élément pour voir son nom accessible</strong>';
+    tooltip.appendChild(closeButton); // Ré-ajout de la croix après modification du contenu
+  });
+
+  // Message initial dans l'encadré
+  tooltip.innerHTML = '<strong>Survolez un élément pour voir son nom accessible</strong>';
+  tooltip.appendChild(closeButton); // Ré-ajout de la croix après modification du contenu
+})();
