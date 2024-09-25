@@ -82,6 +82,13 @@ javascript:(function() {
     return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
   }
   
+  // Créer un div racine pour encapsuler le tooltip
+  const tooltipContainer = document.createElement('div');
+  document.body.appendChild(tooltipContainer);
+
+  // Utiliser Shadow DOM pour encapsuler le style du tooltip
+  const shadowRoot = tooltipContainer.attachShadow({ mode: 'open' });
+  
   // Créer l'encadré (tooltip) draggable
   const tooltip = document.createElement('div');
   tooltip.style.position = 'fixed';
@@ -94,7 +101,7 @@ javascript:(function() {
   tooltip.style.zIndex = '10000';
   tooltip.style.cursor = 'move';
   tooltip.style.userSelect = 'none'; // Désactiver la sélection de texte pendant le drag
-  document.body.appendChild(tooltip);
+  shadowRoot.appendChild(tooltip);
   
   // Ajouter le bouton de fermeture (croix)
   const closeButton = document.createElement('span');
@@ -172,4 +179,26 @@ javascript:(function() {
   // Message initial dans l'encadré
   tooltip.innerHTML = '<strong>Survolez un élément pour voir son nom accessible</strong>';
   tooltip.appendChild(closeButton); // Ré-ajout de la croix après modification du contenu
+  
+  // Ajouter un style de base à l'intérieur du Shadow DOM pour garantir l'isolation
+  const style = document.createElement('style');
+  style.textContent = `
+    div {
+      font-family: Arial, sans-serif;
+      color: black;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    strong {
+      font-weight: bold;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li {
+      margin-bottom: 5px;
+    }
+  `;
+  shadowRoot.appendChild(style);
 })();
