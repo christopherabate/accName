@@ -4,7 +4,7 @@
  * @param {HTMLElement} element - The element for which to obtain the accessible name.
  * @returns {Object} - An object containing keys for each property tested and their values.
  */
-export function accName(element) {
+function accName(element) {
   // Initialize the result object
   const result = {
     isVisible: true,
