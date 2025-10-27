@@ -152,7 +152,7 @@
   tooltip.style.backgroundColor = 'yellow'; // Set background color
   tooltip.style.border = '1px solid black'; // Set border
   tooltip.style.padding = '10px'; // Set padding
-  tooltip.style.zIndex = '10000'; // Ensure it is on top
+  tooltip.style.zIndex = '99999'; // Ensure it is on top
   tooltip.style.cursor = 'move'; // Change cursor to indicate dragging
   tooltip.style.userSelect = 'none'; // Disable text selection while dragging
   tooltip.style.boxShadow = '2px 2px 10px rgba(0,0,0,0.5)'; // Add shadow for better visibility
